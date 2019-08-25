@@ -1,5 +1,7 @@
 package com.github.jessyZu.dz.api;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -10,7 +12,7 @@ public class Service1Impl implements Service1 {
     Service2 service2;
 
     public void hi() {
-        System.out.println("Service1.hi");
+        System.out.println("Service1.hi at " + new Date());
         service2.hi();
     }
 }

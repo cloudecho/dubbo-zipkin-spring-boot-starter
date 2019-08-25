@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.github.jessyZu.dz.TraceDubboAutoConfiguration
+# Auto Configuration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+cloudecho.gallantry.dubbo.zipkin.ZipkinAutoConfiguration

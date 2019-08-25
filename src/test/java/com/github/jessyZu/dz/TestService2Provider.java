@@ -7,7 +7,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties = {"spring.application.name=TestService2Provider"})
+@SpringBootTest(properties = {"spring.application.name=provider2"})
 @ContextConfiguration(locations = {"classpath:spring/dubbo-demo-service2-provider.xml"}, classes = TestApp.class)
 public class TestService2Provider {
 

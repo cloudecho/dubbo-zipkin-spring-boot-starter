@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "spring.zipkin.kafka.topic",
+      "type": "java.lang.String",
+      "description": "Name of the Kafka topic where spans should be sent to Zipkin.",
+      "defaultValue": "zipkin"
+    }
+  ]
+}

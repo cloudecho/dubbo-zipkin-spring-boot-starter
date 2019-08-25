@@ -52,4 +52,7 @@ zipkin服务器源码来自springcloud团队 [https://github.com/joshlong/cloud-
 
 ![img3](./img3.png)
 
+## Reference
+
+* https://dubbo.apache.org/zh-cn/blog/use-zipkin-in-dubbo.html
 
