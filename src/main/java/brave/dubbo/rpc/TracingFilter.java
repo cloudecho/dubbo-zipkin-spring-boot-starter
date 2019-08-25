@@ -30,7 +30,6 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import org.apache.dubbo.rpc.support.RpcUtils;
-import org.springframework.util.StringUtils;
 
 import brave.Span;
 import brave.Span.Kind;
@@ -76,7 +75,7 @@ public final class TracingFilter implements Filter {
     } else {
       TraceContextOrSamplingFlags extracted = extractor.extract(invocation.getAttachments());
       span = extracted.context() != null
-        ? tracer.joinSpan(extracted.context())
+        ? tracer.newChild(extracted.context())
         : tracer.nextSpan(extracted);
     }
 
@@ -84,7 +83,7 @@ public final class TracingFilter implements Filter {
       span.kind(kind);
       String service = invoker.getInterface().getSimpleName();
       String method = RpcUtils.getMethodName(invocation);
-      span.name(service + "/" + method);
+      span.name(service + "/" + method + ":" + invoker.getUrl().getParameter(CommonConstants.VERSION_KEY, "0"));
       remoteEndpoint(rpcContext, span);
       span.start();
     }
