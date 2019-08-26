@@ -5,5 +5,5 @@ package com.github.jessyZu.dz.api;
  */
 public interface Service2 {
     void hi();
-
+    void hello();
 }

@@ -20,6 +20,7 @@ public class TestService1Consumer {
     public void test() {
         try {
             service1.hi();
+            //service1.hello();
             System.in.read();
 
         } catch (Exception e) {

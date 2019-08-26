@@ -2,6 +2,7 @@ package cloudecho.gallantry.dubbo.zipkin;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +64,10 @@ public class ZipkinAutoConfiguration {
         .currentTraceContext(ThreadLocalCurrentTraceContext.newBuilder()
             .addScopeDecorator(MDCScopeDecorator.create())
             .build())
-        .spanReporter(AsyncReporter.builder(sender).build())
+        .spanReporter(AsyncReporter
+            .builder(sender)
+            .closeTimeout(1, TimeUnit.SECONDS)
+            .build())
         .localServiceName(applicationName)
         .build();
   }
