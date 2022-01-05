@@ -18,8 +18,8 @@ import org.springframework.context.annotation.Configuration;
 import brave.Tracing;
 import brave.context.slf4j.MDCScopeDecorator;
 import brave.propagation.ThreadLocalCurrentTraceContext;
-import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Sender;
+import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.reporter.kafka.KafkaSender;
 
 @Configuration
@@ -56,18 +56,22 @@ public class ZipkinAutoConfiguration {
     if (bootstrapServers instanceof List) {
       properties.put("bootstrap.servers", join((List) bootstrapServers));
     }
-    return KafkaSender.newBuilder().topic(this.topic).overrides(properties)
+    return KafkaSender.newBuilder()
+        .topic(this.topic)
+        .overrides(properties)
         .build();
   }
 
   @Bean
   public Tracing tracing(@Autowired @Qualifier(SENDER_BEAN_NAME) Sender sender) {
     return Tracing.newBuilder()
-        .currentTraceContext(ThreadLocalCurrentTraceContext.newBuilder()
-            .addScopeDecorator(MDCScopeDecorator.create())
+        .currentTraceContext(ThreadLocalCurrentTraceContext
+            .newBuilder()
+            .addScopeDecorator(MDCScopeDecorator.get())
             .build())
-        .spanReporter(AsyncReporter
-            .builder(sender)
+        .addSpanHandler(AsyncZipkinSpanHandler
+            .create(sender)
+            .toBuilder()
             .closeTimeout(1, TimeUnit.SECONDS)
             .build())
         .localServiceName(applicationName)
