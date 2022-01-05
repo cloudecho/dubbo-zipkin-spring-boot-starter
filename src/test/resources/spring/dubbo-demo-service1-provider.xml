@@ -17,6 +17,7 @@
                    retries="0"/>
 
     <dubbo:reference id="service2" interface="com.github.jessyZu.dz.api.Service2"
+                     check="false"
                      url="dubbo://127.0.0.1:20882"/>
 
 

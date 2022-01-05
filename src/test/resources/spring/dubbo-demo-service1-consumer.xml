@@ -12,5 +12,6 @@
     <dubbo:consumer filter="tracing"/>
 
     <dubbo:reference id="service1" interface="com.github.jessyZu.dz.api.Service1"
+                     check="false"
                      url="dubbo://127.0.0.1:20881"/>
 </beans>
