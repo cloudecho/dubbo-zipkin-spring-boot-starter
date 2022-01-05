@@ -1,4 +1,4 @@
-package cloudecho.gallantry.dubbo.zipkin;
+package cloudecho.dubbo.zipkin;
 
 import java.util.List;
 import java.util.Map;
