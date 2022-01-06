@@ -14,7 +14,6 @@
 package brave.dubbo.rpc;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
@@ -30,6 +29,7 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import org.apache.dubbo.rpc.support.RpcUtils;
+import org.springframework.util.StringUtils;
 
 import brave.Span;
 import brave.Span.Kind;
@@ -46,9 +46,9 @@ import brave.propagation.TraceContextOrSamplingFlags;
 public final class TracingFilter implements Filter {
 
   Tracer tracer;
-  TraceContext.Extractor<Map<String, String>> extractor;
-  TraceContext.Injector<Map<String, String>> injector;
-  volatile boolean isInit = false;
+  TraceContext.Extractor<Invocation> extractor;
+  TraceContext.Injector<Invocation> injector;
+  volatile boolean inited = false;
 
   /**
    * {@link ExtensionLoader} supplies the tracing implementation which must be named "tracing". For
@@ -59,32 +59,33 @@ public final class TracingFilter implements Filter {
     tracer = tracing.tracer();
     extractor = tracing.propagation().extractor(GETTER);
     injector = tracing.propagation().injector(SETTER);
-    isInit = true;
+    tracing.currentTraceContext();
+    inited = true;
   }
 
   @Override
   public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-    if (!isInit) return invoker.invoke(invocation);
+    if (!inited) return invoker.invoke(invocation);
 
     RpcContext rpcContext = RpcContext.getContext();
     Kind kind = rpcContext.isProviderSide() ? Kind.SERVER : Kind.CLIENT;
     final Span span;
     if (kind.equals(Kind.CLIENT)) {
       span = tracer.nextSpan();
-      injector.inject(span.context(), invocation.getAttachments());
+      injector.inject(span.context(), invocation);
     } else {
-      TraceContextOrSamplingFlags extracted = extractor.extract(invocation.getAttachments());
+      TraceContextOrSamplingFlags extracted = extractor.extract(invocation);
       span = extracted.context() != null
-        ? tracer.newChild(extracted.context())
-        : tracer.nextSpan(extracted);
+          ? tracer.joinSpan(extracted.context())
+          : tracer.nextSpan(extracted);
     }
 
     if (!span.isNoop()) {
       span.kind(kind);
       String service = invoker.getInterface().getSimpleName();
       String method = RpcUtils.getMethodName(invocation);
-      span.name(service + "/" + method + ":" + invoker.getUrl().getParameter(CommonConstants.VERSION_KEY, "0"));
-      remoteEndpoint(rpcContext, span);
+      span.name(service + "/" + method + ":" + invoker.getUrl().getParameter(CommonConstants.VERSION_KEY, ""));
+      remoteEndpoint(invoker, rpcContext, span);
       span.start();
     }
 
@@ -96,7 +97,7 @@ public final class TracingFilter implements Filter {
       }
       isOneway = RpcUtils.isOneway(invoker.getUrl(), invocation);
       Future<Object> future = rpcContext.getFuture(); // the case on async client invocation
-      if (future instanceof FutureAdapter) {
+      if (future instanceof FutureAdapter && !future.isDone()) {
         deferFinish = true;
         ((FutureAdapter) future).whenCompleteAsync(new FinishSpanCallback(span));
       }
@@ -113,10 +114,18 @@ public final class TracingFilter implements Filter {
     }
   }
 
-  private static void remoteEndpoint(RpcContext rpcContext, Span span) {
+  private static void remoteEndpoint(Invoker<?> invoker, RpcContext rpcContext, Span span) {
     InetSocketAddress remoteAddress = rpcContext.getRemoteAddress();
-    if (remoteAddress == null) return;
-    span.remoteIpAndPort(Platform.get().getHostString(remoteAddress), remoteAddress.getPort());
+    if (remoteAddress != null) {
+      span.remoteIpAndPort(Platform.get().getHostString(remoteAddress), remoteAddress.getPort());
+    }
+
+    String remoteApplicationName = rpcContext.getRemoteApplicationName();
+    if (StringUtils.hasText(remoteApplicationName)) {
+      span.remoteServiceName(remoteApplicationName);
+    } else {
+      span.remoteServiceName(invoker.getInterface().getSimpleName());
+    }
   }
 
   static void onError(Throwable error, Span span) {
@@ -126,31 +135,32 @@ public final class TracingFilter implements Filter {
     }
   }
 
-  static final Propagation.Getter<Map<String, String>, String> GETTER =
-    new Propagation.Getter<Map<String, String>, String>() {
-      @Override
-      public String get(Map<String, String> carrier, String key) {
-        return carrier.get(key);
-      }
+  static final Propagation.Getter<Invocation, String> GETTER =
+      new Propagation.Getter<Invocation, String>() {
+        @Override
+        public String get(Invocation carrier, String key) {
+          return carrier.getAttachment(key);
+        }
 
-      @Override
-      public String toString() {
-        return "Map::get";
-      }
-    };
+        @Override
+        public String toString() {
+          return "Invocation::getAttachment";
+        }
+      };
 
-  static final Propagation.Setter<Map<String, String>, String> SETTER =
-    new Propagation.Setter<Map<String, String>, String>() {
-      @Override
-      public void put(Map<String, String> carrier, String key, String value) {
-        carrier.put(key, value);
-      }
+  static final Propagation.Setter<Invocation, String> SETTER =
+      new Propagation.Setter<Invocation, String>() {
+        @Override
+        public void put(Invocation carrier, String key, String value) {
+          carrier.setAttachment(key, value);
+        }
 
-      @Override
-      public String toString() {
-        return "Map::set";
-      }
-    };
+        @Override
+        public String toString() {
+          return "Invocation::setAttachment";
+        }
+      };
+
 
   static final class FinishSpanCallback implements BiConsumer<Object, Throwable> {
     final Span span;
