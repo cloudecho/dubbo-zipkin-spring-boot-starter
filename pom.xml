@@ -5,7 +5,7 @@
 
   <groupId>com.github.cloudecho</groupId>
   <artifactId>dubbo-zipkin-spring-boot-starter</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>dubbo-zipkin-spring-boot-starter</name>
