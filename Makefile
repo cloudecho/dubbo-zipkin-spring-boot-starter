@@ -1,5 +1,8 @@
 package:
 	mvn -DskipTests clean package
 
+install:
+	mvn -DskipTests -Psonatype-oss-release clean install
+
 publish:
-	mvn -DskipTests clean deploy
+	mvn -DskipTests -Psonatype-oss-release clean deploy
