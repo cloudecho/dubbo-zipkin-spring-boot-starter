@@ -52,6 +52,9 @@ java -jar ./zipkin-server-2.23.16-exec.jar
 
 ![zipkin-demo](./zipkin-demo.png)
 
+## CHANGELOG
+
+See [CHANGELOG](./CHANGELOG.md)
 
 ## Reference
 
