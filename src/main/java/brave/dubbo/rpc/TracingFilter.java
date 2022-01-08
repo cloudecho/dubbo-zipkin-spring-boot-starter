@@ -85,7 +85,7 @@ public final class TracingFilter implements Filter {
       String service = invoker.getInterface().getSimpleName();
       String method = RpcUtils.getMethodName(invocation);
       span.name(service + "/" + method + ":" + invoker.getUrl().getParameter(CommonConstants.VERSION_KEY, ""));
-      remoteEndpoint(invoker, rpcContext, span);
+      remoteEndpoint(rpcContext, span);
       span.start();
     }
 
@@ -114,7 +114,7 @@ public final class TracingFilter implements Filter {
     }
   }
 
-  private static void remoteEndpoint(Invoker<?> invoker, RpcContext rpcContext, Span span) {
+  private static void remoteEndpoint(RpcContext rpcContext, Span span) {
     InetSocketAddress remoteAddress = rpcContext.getRemoteAddress();
     if (remoteAddress != null) {
       span.remoteIpAndPort(Platform.get().getHostString(remoteAddress), remoteAddress.getPort());
@@ -124,7 +124,7 @@ public final class TracingFilter implements Filter {
     if (StringUtils.hasText(remoteApplicationName)) {
       span.remoteServiceName(remoteApplicationName);
     } else {
-      span.remoteServiceName(invoker.getInterface().getSimpleName());
+      span.remoteServiceName(rpcContext.getRemoteHostName());
     }
   }
 
